@@ -1,3 +1,6 @@
 [submodule "main/components/libesphttpd"]
 	path = main/components/libesphttpd
 	url = ssh://git@spritesmods.com/libesphttpd
+[submodule "components/libesphttpd"]
+	path = components/libesphttpd
+	url = ssh://git@spritesmods.com/libesphttpd
