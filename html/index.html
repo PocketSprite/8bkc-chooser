@@ -33,7 +33,9 @@ function doUpgrade() {
 		$("#remark").innerHTML="Can't read file!";
 		return
 	}
-	xhr.open("POST", "upload.cgi");
+	var name=$("#file").value
+	name=name.replace(/^.*[\\\/]/, '')
+	xhr.open("POST", "upload.cgi?name="+name);
 	xhr.onreadystatechange=function() {
 		if (xhr.readyState==4 && xhr.status>=200 && xhr.status<300) {
 			setProgress(1);

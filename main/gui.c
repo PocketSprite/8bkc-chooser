@@ -4,48 +4,28 @@
 #include <stdio.h>
 #include "gui.h"
 #include "ugui.h"
-#include "hw.h"
-#include "ssd1331.h"
-#include "romspace.h"
-
-static uint16_t *fb;
-static UG_GUI ugui;
-
-static void oled_pset(UG_S16 x, UG_S16 y, UG_COLOR c) {
-	if (x<0 || x>=80) return;
-	if (y<0 || y>=64) return;
-	fb[(x+8)+(y*96)]=(c>>8)|(c<<8);
-}
-
-static void guiFlush() {
-	ssd1331SendFB(fb);
-}
-
-static void guiCls() {
-	memset(fb, 0, 96*64*2);
-}
+#include "8bkc-hal.h"
+#include "8bkc-ugui.h"
+#include "appfs.h"
 
 void guiCharging() {
-	guiCls();
+	kcugui_cls();
 	UG_FontSelect(&FONT_6X8);
 	UG_SetForecolor(C_WHITE);
 	UG_PutString(0, 0, "CHARGING");
-	guiFlush();
+	kcugui_flush();
 }
 
 void guiFull() {
-	guiCls();
+	kcugui_cls();
 	UG_FontSelect(&FONT_6X8);
 	UG_SetForecolor(C_GREEN);
 	UG_PutString(0, 0, "CHARGED");
-	guiFlush();
+	kcugui_flush();
 }
 
 void guiInit() {
-	fb=malloc(96*64*2);
-	guiCls();
-	memset(fb, 0, 96*64*2);
-	UG_Init(&ugui, oled_pset, 80, 64);
+	kcugui_init();
 	UG_FontSelect(&FONT_6X8);
 	UG_SetForecolor(C_WHITE);
 	UG_PutString(0, 0, "WIFI AP");
@@ -61,7 +41,7 @@ void guiInit() {
 	UG_PutString(30, 56, "OK");
 	UG_SetBackcolor(C_BLACK);
 
-	guiFlush();
+	kcugui_flush();
 }
 
 #define ST_START 0
@@ -90,49 +70,59 @@ void guiKey(int key) {
 	if (state==ST_START) {
 		state=ST_SELECT;
 	} else if (state==ST_SELECT) {
-		if (key==PAD_UP) {
+		if (key==KC_BTN_UP) {
 			if (pos==0) {
 				if (scpos!=0) scpos--;
 			} else {
 				pos--;
 			}
-		} else if (key==PAD_DOWN) {
+		} else if (key==KC_BTN_DOWN) {
 			if (pos==4) {
-				if (scpos<maxPos-4) scpos++;
+				if (scpos<maxPos-5) scpos++;
 			} else {
 				pos++;
 			}
-		} else if (key==PAD_A) {
-			romSetCurr(currIdx);
+		} else if (key==KC_BTN_A) {
+//			romSetCurr(currIdx);
 		}
 		printf("pos %d scpos %d\n", pos, scpos);
 	}
 
 	//Display handling
-	guiCls();
+	kcugui_cls();
 	if (state==ST_SELECT) {
-		RomspaceEnt ent;
+		const char *name;
+		int fd=APPFS_INVALID_FD;
+		
+		for (x=0; x<scpos; x++) {
+			fd=appfsNextEntry(fd);
+		}
+		
 		for (x=0; x<8; x++) {
-			r=romspaceGetEnt(scpos+x, &ent);
-			if (!r) {
+			if (fd!=APPFS_INVALID_FD || (scpos==0 && x==0)) {
+				fd=appfsNextEntry(fd);
+			}
+			if (fd!=APPFS_INVALID_FD) {
+				appfsEntryInfo(fd, &name, NULL);
+			} else {
 				maxPos=scpos+x;
 				break;
 			}
 			if (x==pos) {
 				UG_SetForecolor(C_RED);
-				currIdx=ent.index;
+				currIdx=fd;
 				UG_PutString(0, x*8, ">");
-			} else if (ent.index==romGetCurr()) {
-				UG_SetForecolor(C_YELLOW);
+//			} else if (ent.index==romGetCurr()) {
+//				UG_SetForecolor(C_YELLOW);
 			} else {
 				UG_SetForecolor(C_WHITE);
 			}
-			strncpy(rname, ent.name, 12);
+			strncpy(rname, name, 12);
 			rname[12]=0;
 			UG_PutString(6, x*8, rname);
 		}
 	}
-	guiFlush();
+	kcugui_flush();
 }
 
 

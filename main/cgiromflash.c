@@ -59,7 +59,7 @@ typedef struct {
 } UploadState;
 
 
-int ICACHE_FLASH_ATTR cgiUploadFile(HttpdConnData *connData) {
+int ICACHE_FLASH_ATTR cgiUploadRom(HttpdConnData *connData) {
 	UploadState *state=(UploadState *)connData->cgiData;
 
 	if (connData->conn==NULL) {
@@ -93,7 +93,7 @@ int ICACHE_FLASH_ATTR cgiUploadFile(HttpdConnData *connData) {
 				state->err="No name";
 				state->state=FLST_ERROR;
 			}
-			esp_err_t r=appfsCreateFile(name, connData->post->len, &state->fd);
+			esp_err_t err=appfsCreateFile(name, connData->post->len, &state->fd);
 			if (err!=ESP_OK) {
 				state->err="App too large for free space";
 				state->state=FLST_ERROR;
@@ -127,7 +127,7 @@ int ICACHE_FLASH_ATTR cgiUploadFile(HttpdConnData *connData) {
 				}
 				//Write page
 				httpd_printf("Writing %d bytes of data to SPI pos 0x%x...\n", state->pagePos, state->address);
-				appfsWrite(state->fd, state->address, state->pageData, state->pagePos);
+				appfsWrite(state->fd, state->address, (uint8_t*)state->pageData, state->pagePos);
 				state->address+=PAGELEN;
 				state->pagePos=0;
 				if (state->len==0) state->state=FLST_DONE;
@@ -160,12 +160,12 @@ int ICACHE_FLASH_ATTR cgiUploadFile(HttpdConnData *connData) {
 }
 
 int ICACHE_FLASH_ATTR cgiRomIdx(HttpdConnData *connData) {
-	appfs_handle_t *idx=(appfs_handle_t*)&connData->cgiData;
+	int *idx=(int*)&connData->cgiData;
 	char buff[128];
 	int r;
 	int fd;
 
-	printf("cgiRomIdx: run %d\n", *idx);
+	printf("cgiRomIdx: run %d\n", *idx-0x100);
 	if (*idx==0) {
 		httpdStartResponse(connData, 200);
 		httpdHeader(connData, "Content-Type", "text/json");
@@ -176,19 +176,23 @@ int ICACHE_FLASH_ATTR cgiRomIdx(HttpdConnData *connData) {
 		fd=*idx-0x100;
 	}
 
+	printf("Grabbing entry after %d\n", fd);
 	fd=appfsNextEntry(fd);
+	printf("Next appfs fd: %d\n", fd);
 	if (fd!=APPFS_INVALID_FD) {
-		char *name;
+		char *name=NULL;
 		int size;
-		appfsEntryInfo(fd, name, &size);
+		appfsEntryInfo(fd, &name, &size);
 		sprintf(buff, "%s{\"index\": %d, \"name\": \"%s\", \"size\": %d, \"addr\": \"0x%X\" }\n", *idx?",":"", 
 			fd, name, size, 0);
+		printf(" - %s\n", buff);
 		httpdSend(connData, buff, -1);
 		*idx=fd+0x100;
 		return HTTPD_CGI_MORE;
 	} else {
 		httpdSend(connData, "],\n\"free\": ", -1);
 		sprintf(buff, "%d", appfsGetFreeMem());
+		printf(" - %s\n", buff);
 		httpdSend(connData, buff, -1);
 		httpdSend(connData, "}\n", -1);
 		return HTTPD_CGI_DONE;

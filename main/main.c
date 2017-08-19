@@ -13,8 +13,8 @@ the server, including WiFi connection management capabilities, some IO and
 some pictures of cats.
 */
 
+#include "sdkconfig.h"
 #include "httpd.h"
-#include "io.h"
 #include "httpdespfs.h"
 #include "cgiwifi.h"
 #include "cgiflash.h"
@@ -23,8 +23,6 @@ some pictures of cats.
 #include "espfs.h"
 #include "captdns.h"
 #include "webpages-espfs.h"
-#include "romspace.h"
-#include "ssd1331.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -46,6 +44,8 @@ some pictures of cats.
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 
+#include "appfs.h"
+#include "8bkc-hal.h"
 
 #include "gui.h"
 
@@ -76,15 +76,6 @@ HttpdBuiltInUrl builtInUrls[]={
 };
 
 
-void showWelcomeScreen() {
-	char *buf=malloc(96*64*2);
-	EspFsFile *f=espFsOpen("wifi.rgb");
-	if (f==NULL) return;
-	espFsRead(f, buf, 96*64*2);
-	espFsClose(f);
-	ssd1331SendFB((uint16_t*)buf);
-}
-
 void handleCharging() {
 	int r;
 
@@ -98,67 +89,69 @@ void handleCharging() {
     rtc_clk_cpu_freq_set(RTC_CPU_FREQ_2M);
 
 	do {
-		r=ioGetChgStatus();
-		if (r==IO_CHG_CHARGING) {
+		r=kchal_get_chg_status();
+		if (r==KC_CHG_CHARGING) {
 			guiCharging();
 			printf("Charging...\n");
-		} else if (r==IO_CHG_FULL) {
+		} else if (r==KC_CHG_FULL) {
 			guiFull();
 			printf("Full!\n");
 		}
 		vTaskDelay(1);
-	} while (r!=IO_CHG_NOCHARGER);
+	} while (r!=KC_CHG_NOCHARGER);
 	printf("Charger gone. Shutting down.\n");
 
-    rtc_clk_cpu_freq_set(RTC_CPU_FREQ_80M);
-	ioPowerDown();
+	rtc_clk_cpu_freq_set(RTC_CPU_FREQ_80M);
+	kchal_power_down();
 }
 
 //Main routine. Initialize stdout, the I/O, filesystem and the webserver and we're done.
 int app_main(void)
 {
-	ioInit();
+	kchal_init();
+//ToDo: make this into a menuconfig thing
+#if CONFIG_CHARGE_MODE
 	if (ioGetChgStatus()!=IO_CHG_NOCHARGER) handleCharging();
+#endif
+
+	printf("Appfs init\n");
+	esp_err_t r=appfsInit(1, 3);
+	assert(r==ESP_OK);
+	appfsDump();
 
 	printf("Starting webserver...\n");
-    nvs_flash_init();
-    tcpip_adapter_init();
-    ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
-    ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
-    ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_AP) );
-    wifi_config_t ap_config = {
-        .ap = {
-            .ssid = "gbfemto",
+	nvs_flash_init();
+	tcpip_adapter_init();
+	ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
+	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+	ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
+	ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
+	ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_AP) );
+	wifi_config_t ap_config = {
+		.ap = {
+			.ssid = "gbfemto",
 			.authmode=WIFI_AUTH_OPEN,
 			.max_connection = 2,
-        }
-    };
-    ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_AP, &ap_config) );
-    ESP_ERROR_CHECK( esp_wifi_start() );
-//    ESP_ERROR_CHECK( esp_wifi_connect() );
-
-
-
+		}
+	};
+	ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_AP, &ap_config) );
+	ESP_ERROR_CHECK( esp_wifi_start() );
+//	ESP_ERROR_CHECK( esp_wifi_connect() );
 
 //	captdnsInit();
-	romspaceInit();
 
 	espFsInit((void*)(webpages_espfs_start));
 	httpdInit(builtInUrls, 80);
 
-//	showWelcomeScreen();
 	guiInit();
-
 
 	printf("\nReady\n");
 
 	while(1) {
-		guiKey(ioJoyReadInput());
+		guiKey(kchal_get_keys());
 		vTaskDelay(50 / portTICK_PERIOD_MS);
 	}
 
-    return 0;
+	return 0;
 }
 
