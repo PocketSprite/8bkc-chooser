@@ -114,9 +114,6 @@ int app_main(void)
 	if (ioGetChgStatus()!=IO_CHG_NOCHARGER) handleCharging();
 #endif
 
-	printf("Appfs init\n");
-	esp_err_t r=appfsInit(1, 3);
-	assert(r==ESP_OK);
 	appfsDump();
 
 	printf("Starting webserver...\n");
