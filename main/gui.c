@@ -83,7 +83,8 @@ void guiKey(int key) {
 				pos++;
 			}
 		} else if (key==KC_BTN_A) {
-//			romSetCurr(currIdx);
+			kchal_set_new_app(currIdx);
+			kchal_boot_into_new_app();
 		}
 		printf("pos %d scpos %d\n", pos, scpos);
 	}
