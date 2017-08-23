@@ -49,81 +49,12 @@ void guiInit() {
 #define ST_REBOOT 2
 
 
-static int state=ST_START;
-static int pos=0, scpos=0;
+#include "8bkcgui-widgets.h"
 
-void guiKey(int key) {
-	static int oldKey=1;
-	if (oldKey!=0 || key==0) {
-		oldKey=key;
-		return;
-	}
-	oldKey=key;
-	printf("Key %d\n", key);
-
-	//Calculated during display phase
-	static int currIdx, maxPos;
-	int x, r;
-	char rname[13];
-
-	//Key handling
-	if (state==ST_START) {
-		state=ST_SELECT;
-	} else if (state==ST_SELECT) {
-		if (key==KC_BTN_UP) {
-			if (pos==0) {
-				if (scpos!=0) scpos--;
-			} else {
-				pos--;
-			}
-		} else if (key==KC_BTN_DOWN) {
-			if (pos==4) {
-				if (scpos<maxPos-5) scpos++;
-			} else {
-				pos++;
-			}
-		} else if (key==KC_BTN_A) {
-			kchal_set_new_app(currIdx);
-			kchal_boot_into_new_app();
-		}
-		printf("pos %d scpos %d\n", pos, scpos);
-	}
-
-	//Display handling
-	kcugui_cls();
-	if (state==ST_SELECT) {
-		const char *name;
-		int fd=APPFS_INVALID_FD;
-		
-		for (x=0; x<scpos; x++) {
-			fd=appfsNextEntry(fd);
-		}
-		
-		for (x=0; x<8; x++) {
-			if (fd!=APPFS_INVALID_FD || (scpos==0 && x==0)) {
-				fd=appfsNextEntry(fd);
-			}
-			if (fd!=APPFS_INVALID_FD) {
-				appfsEntryInfo(fd, &name, NULL);
-			} else {
-				maxPos=scpos+x;
-				break;
-			}
-			if (x==pos) {
-				UG_SetForecolor(C_RED);
-				currIdx=fd;
-				UG_PutString(0, x*8, ">");
-//			} else if (ent.index==romGetCurr()) {
-//				UG_SetForecolor(C_YELLOW);
-			} else {
-				UG_SetForecolor(C_WHITE);
-			}
-			strncpy(rname, name, 12);
-			rname[12]=0;
-			UG_PutString(6, x*8, rname);
-		}
-	}
-	kcugui_flush();
+void guiMenu() {
+	int fd=kcugui_filechooser("*.app,*.bin", "CHOOSE APP", NULL, NULL);
+	kchal_set_new_app(fd);
+	kchal_boot_into_new_app();
 }
 
 

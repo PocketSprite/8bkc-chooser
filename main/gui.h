@@ -7,6 +7,6 @@ void guiFull();
 
 void guiInit();
 
-void guiKey(int key);
+void guiMenu();
 
 #endif

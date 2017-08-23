@@ -144,10 +144,7 @@ int app_main(void)
 
 	printf("\nReady\n");
 
-	while(1) {
-		guiKey(kchal_get_keys());
-		vTaskDelay(50 / portTICK_PERIOD_MS);
-	}
+	guiMenu();
 
 	return 0;
 }
