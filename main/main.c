@@ -83,11 +83,10 @@ void handleCharging() {
 	guiInit();
 	guiCharging();
 
-
 	//Disable app cpu
 	DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
 	//Speed down
-    rtc_clk_cpu_freq_set(RTC_CPU_FREQ_2M);
+	rtc_clk_cpu_freq_set(RTC_CPU_FREQ_2M);
 
 	do {
 		r=kchal_get_chg_status();
@@ -97,6 +96,11 @@ void handleCharging() {
 		} else if (r==KC_CHG_FULL) {
 			guiFull();
 			printf("Full!\n");
+		}
+		if (kchal_get_keys() & KC_BTN_POWER) {
+			rtc_clk_cpu_freq_set(RTC_CPU_FREQ_80M);
+			printf("Power btn pressed; starting\n");
+			return;
 		}
 		vTaskDelay(1);
 	} while (r!=KC_CHG_NOCHARGER);
@@ -110,14 +114,10 @@ void handleCharging() {
 int app_main(void)
 {
 	kchal_init();
-//ToDo: make this into a menuconfig thing
-#if CONFIG_CHARGE_MODE
-	if (ioGetChgStatus()!=IO_CHG_NOCHARGER) handleCharging();
-#endif
+	if (kchal_get_chg_status()!=KC_CHG_NOCHARGER) handleCharging();
 
-	esp_log_level_set("*", ESP_LOG_INFO);
-	esp_log_level_set("appfs", ESP_LOG_DEBUG);
-
+//	esp_log_level_set("*", ESP_LOG_INFO);
+//	esp_log_level_set("appfs", ESP_LOG_DEBUG);
 
 	appfsDump();
 	if (appfsExists(UPLOAD_TEMP_NAME)) {
