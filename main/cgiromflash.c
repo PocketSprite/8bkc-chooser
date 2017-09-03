@@ -24,6 +24,7 @@ Some flash handling cgi routines. Used for updating the appfs.
 #include "httpd-platform.h"
 #include "esp32_flash.h"
 #include "appfs.h"
+#include "hexdump.h"
 
 #ifndef UPGRADE_FLAG_FINISH
 #define UPGRADE_FLAG_FINISH     0x02
@@ -39,7 +40,8 @@ Some flash handling cgi routines. Used for updating the appfs.
 //have to buffer some data because the post buffer may be misaligned, we 
 //write SPI data in pages. The page size is a software thing, not
 //a hardware one.
-#define PAGELEN 4096
+#define PAGELEN 4096*4
+#define SPI_FLASH_ERASE_SIZE 65536
 
 #define FLST_START 0
 #define FLST_WRITE 1
@@ -56,11 +58,13 @@ typedef struct {
 	int address;
 	int len;
 	char *err;
+	char name[512];
 } UploadState;
 
 
 int ICACHE_FLASH_ATTR cgiUploadRom(HttpdConnData *connData) {
 	UploadState *state=(UploadState *)connData->cgiData;
+	esp_err_t err;
 
 	if (connData->conn==NULL) {
 		//Connection aborted. Clean up.
@@ -87,13 +91,13 @@ int ICACHE_FLASH_ATTR cgiUploadRom(HttpdConnData *connData) {
 	
 	while (dataLen!=0) {
 		if (state->state==FLST_START) {
-			const char name[512];
-			int len=httpdFindArg(connData->getArgs, "name", name, sizeof(name));
+			int len=httpdFindArg(connData->getArgs, "name", state->name, sizeof(state->name));
 			if (len<=0) {
 				state->err="No name";
 				state->state=FLST_ERROR;
 			}
-			esp_err_t err=appfsCreateFile(name, connData->post->len, &state->fd);
+			printf("Creating temp file %s for upload, size %d\n", UPLOAD_TEMP_NAME, connData->post->len);
+			err=appfsCreateFile(UPLOAD_TEMP_NAME, connData->post->len, &state->fd);
 			if (err!=ESP_OK) {
 				state->err="App too large for free space";
 				state->state=FLST_ERROR;
@@ -122,15 +126,35 @@ int ICACHE_FLASH_ATTR cgiUploadRom(HttpdConnData *connData) {
 				state->pagePos+=lenLeft;
 				state->len-=lenLeft;
 				//Erase sector, if needed
-				if ((state->address&(SPI_FLASH_SEC_SIZE-1))==0) {
-					appfsErase(state->fd, state->address, SPI_FLASH_SEC_SIZE);
+				if ((state->address&(SPI_FLASH_ERASE_SIZE-1))==0) {
+					printf("Erasing %d bytes at 0x%x...\n", SPI_FLASH_ERASE_SIZE, state->address);
+					err=appfsErase(state->fd, state->address, SPI_FLASH_ERASE_SIZE);
+					if (err!=ESP_OK) {
+						printf("AppFs erase failed: %d\n", err);
+						state->err="AppfsErase failed";
+						state->state=FLST_ERROR;
+					}
 				}
 				//Write page
-				httpd_printf("Writing %d bytes of data to SPI pos 0x%x...\n", state->pagePos, state->address);
-				appfsWrite(state->fd, state->address, (uint8_t*)state->pageData, state->pagePos);
+				httpd_printf("Writing %d bytes (adr %p) of data to SPI pos 0x%x...\n", state->pagePos, state->pageData, state->address);
+				err=appfsWrite(state->fd, state->address, (uint8_t*)state->pageData, state->pagePos);
+				if (err!=ESP_OK) {
+					printf("AppFs write failed: %d\n", err);
+					state->err="AppfsWrite failed";
+					state->state=FLST_ERROR;
+				}
 				state->address+=PAGELEN;
 				state->pagePos=0;
-				if (state->len==0) state->state=FLST_DONE;
+				if (state->len==0) {
+					printf("Done. Renaming temp file %s to %s\n", UPLOAD_TEMP_NAME, state->name);
+					state->state=FLST_DONE;
+					err=appfsRename(UPLOAD_TEMP_NAME, state->name);
+					if (err!=ESP_OK) {
+						printf("Rename failed: %d\n", err);
+						state->err="Rename failed";
+						state->state=FLST_ERROR;
+					}
+				}
 			}
 		} else if (state->state==FLST_DONE) {
 			httpd_printf("Huh? %d bogus bytes received after data received.\n", dataLen);
@@ -162,7 +186,6 @@ int ICACHE_FLASH_ATTR cgiUploadRom(HttpdConnData *connData) {
 int ICACHE_FLASH_ATTR cgiRomIdx(HttpdConnData *connData) {
 	int *idx=(int*)&connData->cgiData;
 	char buff[128];
-	int r;
 	int fd;
 
 	printf("cgiRomIdx: run %d\n", *idx-0x100);
@@ -180,7 +203,7 @@ int ICACHE_FLASH_ATTR cgiRomIdx(HttpdConnData *connData) {
 	fd=appfsNextEntry(fd);
 	printf("Next appfs fd: %d\n", fd);
 	if (fd!=APPFS_INVALID_FD) {
-		char *name=NULL;
+		const char *name=NULL;
 		int size;
 		appfsEntryInfo(fd, &name, &size);
 		sprintf(buff, "%s{\"index\": %d, \"name\": \"%s\", \"size\": %d, \"addr\": \"0x%X\" }\n", *idx?",":"", 
@@ -200,10 +223,24 @@ int ICACHE_FLASH_ATTR cgiRomIdx(HttpdConnData *connData) {
 }
 
 int ICACHE_FLASH_ATTR cgiDelete(HttpdConnData *connData) {
+	//idx contains the fd of the file
+	char fdText[16];
+	const char *name;
+	int len=httpdFindArg(connData->getArgs, "idx", fdText, sizeof(fdText));
+	if (len>0) {
+		int fd=atoi(fdText);
+		appfsEntryInfo(fd, &name, NULL);
+		appfsDeleteFile(name);
+		httpdStartResponse(conn, 302);
+		httpdHeader(connData, "Content-Type", "text/html");
+		httpdHeader(connData, "Location", "index.html");
+		httpdEndHeaders(connData);
+		httpdSend(connData, "Killed", -1);
+	} else {
 		httpdStartResponse(connData, 200);
 		httpdHeader(connData, "Content-Type", "text/html");
 		httpdEndHeaders(connData);
-		httpdSend(connData, "Killed", -1);
-//	romspaceKillAll();
-	return HTTPD_CGI_DONE;
+		httpdSend(connData, "Invalid idx var\n", -1);
+	}
+		return HTTPD_CGI_DONE;
 }

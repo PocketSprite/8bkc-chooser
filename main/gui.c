@@ -51,8 +51,14 @@ void guiInit() {
 
 #include "8bkcgui-widgets.h"
 
+static int fccallback(int button, char **glob, char **desc, void *usrptr) {
+	if (button & KC_BTN_POWER) kchal_power_down();
+	return 0;
+}
+
+
 void guiMenu() {
-	int fd=kcugui_filechooser("*.app,*.bin", "CHOOSE APP", NULL, NULL);
+	int fd=kcugui_filechooser("*.app,*.bin", "CHOOSE APP", fccallback, NULL);
 	kchal_set_new_app(fd);
 	kchal_boot_into_new_app();
 }

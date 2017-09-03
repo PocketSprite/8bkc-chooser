@@ -48,6 +48,7 @@ some pictures of cats.
 #include "8bkc-hal.h"
 
 #include "gui.h"
+#include "esp_log.h"
 
 esp_err_t event_handler(void *ctx, system_event_t *event)
 {
@@ -114,7 +115,15 @@ int app_main(void)
 	if (ioGetChgStatus()!=IO_CHG_NOCHARGER) handleCharging();
 #endif
 
+	esp_log_level_set("*", ESP_LOG_INFO);
+	esp_log_level_set("appfs", ESP_LOG_DEBUG);
+
+
 	appfsDump();
+	if (appfsExists(UPLOAD_TEMP_NAME)) {
+		printf("Deleting aborted upload file.\n");
+		appfsDeleteFile(UPLOAD_TEMP_NAME);
+	}
 
 	printf("Starting webserver...\n");
 	nvs_flash_init();
