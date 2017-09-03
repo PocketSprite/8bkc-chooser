@@ -5,8 +5,8 @@
 
 #define UPLOAD_TEMP_NAME "__upload_temp_file__.tmp"
 
-int cgiUploadRom(HttpdConnData *connData);
-int cgiRomIdx(HttpdConnData *connData);
+int cgiUploadFile(HttpdConnData *connData);
+int cgiFileIdx(HttpdConnData *connData);
 int cgiDelete(HttpdConnData *connData);
 
 #endif

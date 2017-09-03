@@ -12,7 +12,7 @@ Some flash handling cgi routines. Used for updating the appfs.
  */
 
 #include <esp8266.h>
-#include "cgiromflash.h"
+#include "cgiappfs.h"
 #include "espfs.h"
 #include "cgiflash.h"
 #include "espfs.h"
@@ -41,7 +41,7 @@ Some flash handling cgi routines. Used for updating the appfs.
 //write SPI data in pages. The page size is a software thing, not
 //a hardware one.
 #define PAGELEN 4096*4
-#define SPI_FLASH_ERASE_SIZE 65536
+#define SPI_FLASH_ERASE_SIZE PAGELEN
 
 #define FLST_START 0
 #define FLST_WRITE 1
@@ -62,7 +62,7 @@ typedef struct {
 } UploadState;
 
 
-int ICACHE_FLASH_ATTR cgiUploadRom(HttpdConnData *connData) {
+int ICACHE_FLASH_ATTR cgiUploadFile(HttpdConnData *connData) {
 	UploadState *state=(UploadState *)connData->cgiData;
 	esp_err_t err;
 
@@ -134,6 +134,7 @@ int ICACHE_FLASH_ATTR cgiUploadRom(HttpdConnData *connData) {
 						state->err="AppfsErase failed";
 						state->state=FLST_ERROR;
 					}
+					printf("Erase done.\n");
 				}
 				//Write page
 				httpd_printf("Writing %d bytes (adr %p) of data to SPI pos 0x%x...\n", state->pagePos, state->pageData, state->address);
@@ -143,6 +144,7 @@ int ICACHE_FLASH_ATTR cgiUploadRom(HttpdConnData *connData) {
 					state->err="AppfsWrite failed";
 					state->state=FLST_ERROR;
 				}
+				printf("Write done.\n");
 				state->address+=PAGELEN;
 				state->pagePos=0;
 				if (state->len==0) {
@@ -183,17 +185,17 @@ int ICACHE_FLASH_ATTR cgiUploadRom(HttpdConnData *connData) {
 	return HTTPD_CGI_MORE;
 }
 
-int ICACHE_FLASH_ATTR cgiRomIdx(HttpdConnData *connData) {
+int ICACHE_FLASH_ATTR cgiFileIdx(HttpdConnData *connData) {
 	int *idx=(int*)&connData->cgiData;
 	char buff[128];
 	int fd;
 
-	printf("cgiRomIdx: run %d\n", *idx-0x100);
+	printf("cgiFileIdx: run %d\n", *idx-0x100);
 	if (*idx==0) {
 		httpdStartResponse(connData, 200);
 		httpdHeader(connData, "Content-Type", "text/json");
 		httpdEndHeaders(connData);
-		httpdSend(connData, "{\n\"roms\": [\n", -1);
+		httpdSend(connData, "{\n\"files\": [\n", -1);
 		fd=APPFS_INVALID_FD;
 	} else {
 		fd=*idx-0x100;
@@ -231,7 +233,7 @@ int ICACHE_FLASH_ATTR cgiDelete(HttpdConnData *connData) {
 		int fd=atoi(fdText);
 		appfsEntryInfo(fd, &name, NULL);
 		appfsDeleteFile(name);
-		httpdStartResponse(conn, 302);
+		httpdStartResponse(connData, 302);
 		httpdHeader(connData, "Content-Type", "text/html");
 		httpdHeader(connData, "Location", "index.html");
 		httpdEndHeaders(connData);

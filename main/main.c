@@ -18,7 +18,7 @@ some pictures of cats.
 #include "httpdespfs.h"
 #include "cgiwifi.h"
 #include "cgiflash.h"
-#include "cgiromflash.h"
+#include "cgiappfs.h"
 #include "auth.h"
 #include "espfs.h"
 #include "captdns.h"
@@ -69,8 +69,8 @@ HttpdBuiltInUrl builtInUrls[]={
 	{"*", cgiRedirectApClientToHostname, "esp8266.nonet"},
 	{"/", cgiRedirect, "/index.html"},
 	{"/reboot.cgi", cgiRebootFirmware, NULL},
-	{"/upload.cgi", cgiUploadRom, NULL},
-	{"/romidx.cgi", cgiRomIdx, NULL},
+	{"/upload.cgi", cgiUploadFile, NULL},
+	{"/fileidx.cgi", cgiFileIdx, NULL},
 	{"/delete.cgi", cgiDelete, NULL},
 	{"*", cgiEspFsHook, NULL}, //Catch-all cgi function for the filesystem
 	{NULL, NULL, NULL}
