@@ -41,7 +41,7 @@ Some flash handling cgi routines. Used for updating the appfs.
 //write SPI data in pages. The page size is a software thing, not
 //a hardware one.
 #define PAGELEN 4096*4
-#define SPI_FLASH_ERASE_SIZE PAGELEN
+#define SPI_FLASH_ERASE_SIZE 32768 //32K - flash has a cmd for this
 
 #define FLST_START 0
 #define FLST_WRITE 1

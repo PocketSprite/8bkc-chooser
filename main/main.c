@@ -80,6 +80,7 @@ HttpdBuiltInUrl builtInUrls[]={
 void handleCharging() {
 	int r;
 
+	printf("Detected charger.\n");
 	guiInit();
 	guiCharging();
 
