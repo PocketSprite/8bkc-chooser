@@ -33,6 +33,8 @@ some pictures of cats.
 #include "esp_system.h"
 #include "esp_event.h"
 #include "esp_event_loop.h"
+#include "esp_spi_flash.h"
+#include "esp_partition.h"
 #include "nvs_flash.h"
 #include "driver/gpio.h"
 
@@ -46,8 +48,11 @@ some pictures of cats.
 
 #include "appfs.h"
 #include "8bkc-hal.h"
+#include "8bkc-ugui.h"
+#include "8bkcgui-widgets.h"
 
 #include "gui.h"
+#include "ugui.h"
 #include "esp_log.h"
 
 esp_err_t event_handler(void *ctx, system_event_t *event)
@@ -111,10 +116,70 @@ void handleCharging() {
 	kchal_power_down();
 }
 
+
+
+void do_recovery_mode() {
+	//Start + select are pressed while turning on or resetting. We haven't touched appfs or nvram
+	//yet; give user option to nuke either or both.
+	
+	kcugui_menuitem_t menu[]={
+		{" v Exit    ",0,NULL},
+		{"Erase Flash",0,NULL},
+		{" Reset NVS ",0,NULL},
+		{"Factory Rst",0,NULL},
+		{"",KCUGUI_MENUITEM_LAST,0,NULL}
+	};
+	
+	guiInit();
+	int i=kcugui_menu(menu, "RECOVERY", NULL, NULL);
+	printf("Recovery menu choice: %d\n", i);
+	if (i==1 || i==3) {
+		esp_err_t r=ESP_OK;
+		printf("Kill appfs\n");
+		const esp_partition_t *p=esp_partition_find_first(APPFS_PART_TYPE, APPFS_PART_SUBTYPE, NULL);
+		for (int i=0; i<p->size; i+=0x10000) {
+			kcugui_cls();
+			UG_FontSelect(&FONT_6X8);
+			UG_SetForecolor(C_YELLOW);
+			UG_PutString(0, 0, "ERASING...");
+			UG_SetForecolor(C_WHITE);
+			char pct[10];
+			sprintf(pct, "%d%%", (i*100)/p->size);
+			UG_PutString(0, 8*3, pct);
+			kcugui_flush();
+			esp_err_t lr=esp_partition_erase_range(p, i, 0x10000);
+			if (lr!=ESP_OK) r=lr;
+			vTaskDelay(1);
+		}
+		if (r!=ESP_OK) {
+			printf("Couldn't erase: %d\n", r);
+			UG_PutString(0, 8, "FAILED");
+			vTaskDelay(3000/portTICK_RATE_MS);
+		}
+	} else if (i==2 || i==3) {
+		printf("Kill nvs\n");
+		const esp_partition_t *p=esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
+		kcugui_cls();
+		UG_FontSelect(&FONT_6X8);
+		UG_SetForecolor(C_YELLOW);
+		UG_PutString(0, 0, "CLEARING...");
+		kcugui_flush();
+		esp_err_t r=esp_partition_erase_range(p, 0, p->size);
+		if (r!=ESP_OK) {
+			printf("Couldn't erase: %d\n", r);
+			UG_PutString(0, 8, "FAILED");
+			vTaskDelay(3000/portTICK_RATE_MS);
+		}
+	}
+	kcugui_deinit();
+}
+
 //Main routine. Initialize stdout, the I/O, filesystem and the webserver and we're done.
 int app_main(void)
 {
-	kchal_init();
+	kchal_init_hw();
+	if (kchal_get_keys() == (KC_BTN_START|KC_BTN_SELECT)) do_recovery_mode();
+	kchal_init_sdk();
 	if (kchal_get_chg_status()!=KC_CHG_NOCHARGER) handleCharging();
 
 //	esp_log_level_set("*", ESP_LOG_INFO);
