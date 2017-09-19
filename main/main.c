@@ -82,9 +82,15 @@ HttpdBuiltInUrl builtInUrls[]={
 };
 
 
+//Hack: Call ssd driver directly
+void ssd1331SetContrast(int ctr);
+
 void handleCharging() {
 	int r;
+	int fullCtr=0;
 
+	//Force contrast low to decrease chance of burn-in
+	ssd1331SetContrast(32);
 	printf("Detected charger.\n");
 	guiInit();
 	guiCharging();
@@ -99,14 +105,19 @@ void handleCharging() {
 		if (r==KC_CHG_CHARGING) {
 			guiCharging();
 			printf("Charging...\n");
+			fullCtr=0;
 		} else if (r==KC_CHG_FULL) {
 			guiFull();
 			printf("Full!\n");
+			fullCtr++;
 		}
 		if (kchal_get_keys() & KC_BTN_POWER) {
 			rtc_clk_cpu_freq_set(RTC_CPU_FREQ_80M);
 			printf("Power btn pressed; starting\n");
 			return;
+		}
+		if (fullCtr==32) {
+			kchal_cal_adc();
 		}
 		vTaskDelay(1);
 	} while (r!=KC_CHG_NOCHARGER);
@@ -123,7 +134,7 @@ void do_recovery_mode() {
 	//yet; give user option to nuke either or both.
 	
 	kcugui_menuitem_t menu[]={
-		{" v Exit    ",0,NULL},
+		{"   Exit    ",0,NULL},
 		{"Erase Flash",0,NULL},
 		{" Reset NVS ",0,NULL},
 		{"Factory Rst",0,NULL},

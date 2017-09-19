@@ -130,7 +130,7 @@ int ICACHE_FLASH_ATTR cgiUploadFile(HttpdConnData *connData) {
 					printf("Erasing %d bytes at 0x%x...\n", SPI_FLASH_ERASE_SIZE, state->address);
 					err=appfsErase(state->fd, state->address, SPI_FLASH_ERASE_SIZE);
 					if (err!=ESP_OK) {
-						printf("AppFs erase failed: %d\n", err);
+						printf("AppFs erase failed: %x\n", err);
 						state->err="AppfsErase failed";
 						state->state=FLST_ERROR;
 					}

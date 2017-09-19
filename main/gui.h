@@ -4,6 +4,7 @@
 
 void guiCharging();
 void guiFull();
+void guiBatEmpty();
 
 void guiInit();
 
