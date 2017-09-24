@@ -129,6 +129,7 @@ static int fccallback(int button, char **glob, char **desc, void *usrptr) {
 
 void guiMenu() {
 	int fd=kcugui_filechooser("*.app,*.bin", "CHOOSE APP", fccallback, NULL);
+	while(kchal_get_keys()); //wait till btn released
 	kchal_set_new_app(fd);
 	kchal_boot_into_new_app();
 }

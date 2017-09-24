@@ -113,8 +113,11 @@ void handleCharging() {
 		}
 		if (kchal_get_keys() & KC_BTN_POWER) {
 			rtc_clk_cpu_freq_set(RTC_CPU_FREQ_80M);
-			printf("Power btn pressed; starting\n");
-			return;
+			printf("Power btn pressed; restarting with override bit set\n");
+			uint32_t r=REG_READ(RTC_CNTL_STORE0_REG);
+			r|=0x100;
+			REG_WRITE(RTC_CNTL_STORE0_REG, r);
+			kchal_power_down();
 		}
 		if (fullCtr==32) {
 			kchal_cal_adc();
@@ -191,7 +194,8 @@ int app_main(void)
 	kchal_init_hw();
 	if (kchal_get_keys() == (KC_BTN_START|KC_BTN_SELECT)) do_recovery_mode();
 	kchal_init_sdk();
-	if (kchal_get_chg_status()!=KC_CHG_NOCHARGER) handleCharging();
+	uint32_t r=REG_READ(RTC_CNTL_STORE0_REG);
+	if (kchal_get_chg_status()!=KC_CHG_NOCHARGER && ((r&0x100)==0)) handleCharging();
 
 //	esp_log_level_set("*", ESP_LOG_INFO);
 //	esp_log_level_set("appfs", ESP_LOG_DEBUG);
