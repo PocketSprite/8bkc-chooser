@@ -19,6 +19,7 @@ some pictures of cats.
 #include "cgiwifi.h"
 #include "cgiflash.h"
 #include "cgiappfs.h"
+#include "cgi.h"
 #include "auth.h"
 #include "espfs.h"
 #include "captdns.h"
@@ -77,6 +78,8 @@ HttpdBuiltInUrl builtInUrls[]={
 	{"/upload.cgi", cgiUploadFile, NULL},
 	{"/fileidx.cgi", cgiFileIdx, NULL},
 	{"/delete.cgi", cgiDelete, NULL},
+	{"/poweroff.cgi", cgiPowerOff, NULL},
+	{"/reset.cgi", cgiReset, NULL},
 	{"*", cgiEspFsHook, NULL}, //Catch-all cgi function for the filesystem
 	{NULL, NULL, NULL}
 };
@@ -117,7 +120,7 @@ void handleCharging() {
 			uint32_t r=REG_READ(RTC_CNTL_STORE0_REG);
 			r|=0x100;
 			REG_WRITE(RTC_CNTL_STORE0_REG, r);
-			kchal_power_down();
+			kchal_boot_into_new_app();
 		}
 		if (fullCtr==32) {
 			kchal_cal_adc();
@@ -188,13 +191,17 @@ void do_recovery_mode() {
 	kcugui_deinit();
 }
 
+//internal fn
+uint32_t kchal_rtc_reg_bootup_val();
+
 //Main routine. Initialize stdout, the I/O, filesystem and the webserver and we're done.
 int app_main(void)
 {
 	kchal_init_hw();
 	if (kchal_get_keys() == (KC_BTN_START|KC_BTN_SELECT)) do_recovery_mode();
 	kchal_init_sdk();
-	uint32_t r=REG_READ(RTC_CNTL_STORE0_REG);
+	uint32_t r=kchal_rtc_reg_bootup_val();
+	printf("Rtc store reg: %x\n", r);
 	if (kchal_get_chg_status()!=KC_CHG_NOCHARGER && ((r&0x100)==0)) handleCharging();
 
 //	esp_log_level_set("*", ESP_LOG_INFO);
