@@ -62,15 +62,14 @@ void guiInit() {
 	UG_SetForecolor(C_WHITE);
 	UG_PutString(0, 0, "WIFI AP");
 	UG_SetForecolor(C_YELLOW);
-	UG_PutString(0, 8, "gbfemto");
+	UG_PutString(0, 8, " pkspr");
 	UG_SetForecolor(C_WHITE);
 	UG_PutString(0, 16, "GO TO:");
 	UG_SetForecolor(C_YELLOW);
 	UG_PutString(0, 24, "HTTP://192.168.4.1/");
 
-	UG_SetForecolor(C_BLACK);
-	UG_SetBackcolor(C_WHITE);
-	UG_PutString(30, 56, "OK");
+	UG_SetForecolor(C_RED);
+	UG_PutString(30, 56, "MENU");
 	UG_SetBackcolor(C_BLACK);
 
 	kcugui_flush();
@@ -128,6 +127,9 @@ static int fccallback(int button, char **glob, char **desc, void *usrptr) {
 
 
 void guiMenu() {
+	//Wait till all buttons are released, and then until one button is pressed to go into the menu.
+	while (kchal_get_keys()) vTaskDelay(100/portTICK_RATE_MS);
+	while (!kchal_get_keys()) vTaskDelay(100/portTICK_RATE_MS);
 	int fd=kcugui_filechooser("*.app,*.bin", "CHOOSE APP", fccallback, NULL);
 	while(kchal_get_keys()); //wait till btn released
 	kchal_set_new_app(fd);

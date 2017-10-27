@@ -223,7 +223,7 @@ int app_main(void)
 	ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_AP) );
 	wifi_config_t ap_config = {
 		.ap = {
-			.ssid = "gbfemto",
+			.ssid = "pkspr",
 			.authmode=WIFI_AUTH_OPEN,
 			.max_connection = 2,
 		}
