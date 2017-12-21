@@ -25,6 +25,7 @@ Some flash handling cgi routines. Used for updating the appfs.
 #include "esp32_flash.h"
 #include "appfs.h"
 #include "hexdump.h"
+#include "nvs.h"
 
 #ifndef UPGRADE_FLAG_FINISH
 #define UPGRADE_FLAG_FINISH     0x02
@@ -232,6 +233,17 @@ int ICACHE_FLASH_ATTR cgiDelete(HttpdConnData *connData) {
 	if (len>0) {
 		int fd=atoi(fdText);
 		appfsEntryInfo(fd, &name, NULL);
+		//Try to delete nvs storage as well.
+		esp_err_t r;
+		nvs_handle nvsh;
+		r=nvs_open(name, NVS_READWRITE, &nvsh);
+		if (r==ESP_OK) {
+			nvs_erase_all(nvsh);
+			nvs_commit(nvsh);
+			nvs_close(nvsh);
+			printf("Removed appfs entry for %s as well.\n", name);
+		}
+		//Kill appfs file
 		appfsDeleteFile(name);
 		httpdStartResponse(connData, 302);
 		httpdHeader(connData, "Content-Type", "text/html");

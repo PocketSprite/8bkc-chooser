@@ -7,5 +7,14 @@ EXTRA_COMPONENT_DIRS := /home/jeroen/esp8266/esp32/8bkc-sdk/8bkc-components/
 
 PROJECT_NAME := 8bkc-chooser
 
+COMPONENTS := 8bkc-hal app_update appfs aws_iot bootloader bootloader_support bt console \
+cxx driver esp32 esptool_py freertos gui-util heap micro-ecc\
+libesphttpd log lwip main mbedtls mkappfs newlib nvs_flash app_trace\
+partition_table soc spi_flash tcpip_adapter ugui ulp vfs wpa_supplicant \
+xtensa-debug-module ethernet pthread 
+
+# jsmn json wear_levelling fatfs expat nghttp spiffs libsodium mdns openssl sdmmc
+
+
 include $(IDF_PATH)/make/project.mk
 
