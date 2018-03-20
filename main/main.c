@@ -191,8 +191,37 @@ void do_recovery_mode() {
 	kcugui_deinit();
 }
 
+
 //internal fn
 uint32_t kchal_rtc_reg_bootup_val();
+void kchal_set_rtc_reg(uint32_t val);
+
+void handleKeyLock() {
+	guiInit();
+	kcugui_cls();
+	UG_FontSelect(&FONT_6X8);
+	UG_SetForecolor(C_YELLOW);
+	UG_PutString(0, 0, " KEY LOCK ");
+	UG_SetForecolor(C_WHITE);
+	UG_PutString(0, 24, "  Press A   ");
+	kcugui_flush();
+	int oldbtn=kchal_get_keys();
+	for (int i=0; i<15; i++) {
+		int btn=kchal_get_keys();
+		if (!(btn&KC_BTN_POWER)) {
+			if ((!(oldbtn&KC_BTN_A)) && (btn&KC_BTN_A)) {
+				uint32_t v=kchal_rtc_reg_bootup_val();
+				v=(v&0xffffff)|0xa5000000;
+				kchal_set_rtc_reg(v);
+				kchal_boot_into_new_app();
+			}
+		}
+		oldbtn=btn;
+		vTaskDelay(100/portTICK_RATE_MS);
+	}
+	//No A button pressed in time. Must be spurious.
+	kchal_power_down();
+}
 
 //Main routine. Initialize stdout, the I/O, filesystem and the webserver and we're done.
 int app_main(void)
@@ -203,6 +232,7 @@ int app_main(void)
 	uint32_t r=kchal_rtc_reg_bootup_val();
 	printf("Rtc store reg: %x\n", r);
 	if (kchal_get_chg_status()!=KC_CHG_NOCHARGER && ((r&0x100)==0)) handleCharging();
+	if ((r&0xff000000)==0xA6000000) handleKeyLock();
 
 //	esp_log_level_set("*", ESP_LOG_INFO);
 //	esp_log_level_set("appfs", ESP_LOG_DEBUG);
