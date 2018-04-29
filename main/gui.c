@@ -243,12 +243,16 @@ static int fccallback(int button, char **glob, char **desc, void *usrptr) {
 	return 0;
 }
 
+int app_select_filter_fn(const char *name, void *filterarg) {
+	if (strcmp(name, "chooser.app")==0) return 0; //filter out this app, kinda stupid to start that from the menu.
+	return kcugui_filechooser_filter_glob(name, filterarg);
+}
 
 void guiMenu() {
 	//Wait till all buttons are released, and then until one button is pressed to go into the menu.
 	while (kchal_get_keys()) vTaskDelay(100/portTICK_RATE_MS);
 	while (!kchal_get_keys()) vTaskDelay(100/portTICK_RATE_MS);
-	int fd=kcugui_filechooser("*.app,*.bin", "CHOOSE APP", fccallback, NULL);
+	int fd=kcugui_filechooser_filter(app_select_filter_fn, "*.app,*.bin", "CHOOSE APP", fccallback, NULL);
 	while(kchal_get_keys()); //wait till btn released
 	kchal_set_new_app(fd);
 	kchal_boot_into_new_app();
