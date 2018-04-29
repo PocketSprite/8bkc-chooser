@@ -86,14 +86,18 @@ HttpdBuiltInUrl builtInUrls[]={
 
 
 //Hack: Call ssd driver directly
-void ssd1331SetContrast(int ctr);
+void ssd1331SetBrightness(int ctr);
 
 void handleCharging() {
 	int r;
 	int fullCtr=0;
+	//The LiIon charger sometimes goes back from 'full' to 'charging', which is
+	//confusing to the end user. This variable becomes true if the LiIon has indicated 'full'
+	//for a while, and it being true causes the 'full' icon to always show.
+	int fixFull=0;
 
-	//Force contrast low to decrease chance of burn-in
-	ssd1331SetContrast(32);
+	//Force brightness low to decrease chance of burn-in
+	ssd1331SetBrightness(32);
 	printf("Detected charger.\n");
 	guiInit();
 	guiCharging();
@@ -105,15 +109,16 @@ void handleCharging() {
 
 	do {
 		r=kchal_get_chg_status();
-		if (r==KC_CHG_CHARGING) {
-			guiCharging();
-			printf("Charging...\n");
-			fullCtr=0;
-		} else if (r==KC_CHG_FULL) {
+		if (r==KC_CHG_FULL || fixFull) {
 			guiFull();
 			printf("Full!\n");
 			fullCtr++;
+		} else if (r==KC_CHG_CHARGING) {
+			guiCharging();
+			printf("Charging...\n");
+			fullCtr=0;
 		}
+
 		if (kchal_get_keys() & KC_BTN_POWER) {
 			rtc_clk_cpu_freq_set(RTC_CPU_FREQ_80M);
 			printf("Power btn pressed; restarting with override bit set\n");
@@ -124,6 +129,7 @@ void handleCharging() {
 		}
 		if (fullCtr==32) {
 			kchal_cal_adc();
+			fixFull=1;
 		}
 		vTaskDelay(1);
 	} while (r!=KC_CHG_NOCHARGER);

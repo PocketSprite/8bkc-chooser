@@ -4,8 +4,9 @@
 #
 
 EXTRA_COMPONENT_DIRS := $(POCKETSPRITE_PATH)/8bkc-components/
+IDF_PATH := $(POCKETSPRITE_PATH)/esp-idf
 
-PROJECT_NAME := 8bkc-chooser
+PROJECT_NAME := chooser
 
 COMPONENTS := 8bkc-hal app_update appfs aws_iot bootloader bootloader_support bt console \
 cxx driver esp32 esptool_py freertos gui-util heap micro-ecc\

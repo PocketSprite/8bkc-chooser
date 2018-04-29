@@ -157,7 +157,7 @@ void option_set_text(opt_data_t *t) {
 	} else if (t->opt_id==OPT_VOL) {
 		sprintf(t->opt_name, "Volume %d", kchal_get_volume());
 	} else if (t->opt_id==OPT_BRIGHT) {
-		sprintf(t->opt_name, "Bright %d", kchal_get_contrast());
+		sprintf(t->opt_name, "Bright %d", kchal_get_brightness());
 	}
 }
 
@@ -173,11 +173,11 @@ int option_menu_cb(int button, char **desc, kcugui_menuitem_t **menu, int item_s
 		if (n>255) n=255;
 		kchal_set_volume(n);
 	} else if (od->opt_id==OPT_BRIGHT) {
-		int n=kchal_get_contrast();
+		int n=kchal_get_brightness();
 		if (button==KC_BTN_LEFT) n-=10; else n+=10;
 		if (n<0) n=0;
 		if (n>255) n=255;
-		kchal_set_contrast(n);
+		kchal_set_brightness(n);
 	}
 	option_set_text(od);
 	return 0;
