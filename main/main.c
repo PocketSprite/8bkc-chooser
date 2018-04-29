@@ -114,7 +114,7 @@ void handleCharging() {
 			printf("Full!\n");
 			fullCtr++;
 		} else if (r==KC_CHG_CHARGING) {
-			guiCharging();
+			guiCharging(kchal_get_bat_mv()>4100);
 			printf("Charging...\n");
 			fullCtr=0;
 		}

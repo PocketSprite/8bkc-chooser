@@ -25,6 +25,7 @@ static const uint8_t gfx[]={
 #define GFX_O_EMPTY 0
 #define GFX_O_FULL 1
 #define GFX_O_CHG 2
+#define GFX_O_CHGNEARFULL 3
 
 
 void drawIcon(int px, int py, int o) {
@@ -38,9 +39,13 @@ void drawIcon(int px, int py, int o) {
 }
 
 
-void guiCharging() {
+void guiCharging(int almostFull) {
 	kcugui_cls();
-	drawIcon(20, 26, GFX_O_CHG);
+	if (!almostFull) {
+		drawIcon(20, 26, GFX_O_CHG);
+	} else {
+		drawIcon(20, 26, GFX_O_CHGNEARFULL);
+	}
 	kcugui_flush();
 }
 
