@@ -119,19 +119,25 @@ static void debug_screen() {
 	while(1) {
 		kcugui_cls();
 		UG_FontSelect(&FONT_6X8);
-		UG_SetForecolor(C_WHITE);
+		UG_SetForecolor(C_YELLOW);
 		UG_PutString(0, 0, "DEBUG");
+		UG_SetForecolor(C_WHITE);
 		k=kchal_get_keys();
 		sprintf(buf, "KEYS: %X", k);
-		UG_PutString(0, 16, buf);
+		UG_PutString(0, 8, buf);
 		v=kchal_get_chg_status();
 		sprintf(buf, "CHG: %X", v);
-		UG_PutString(0, 24, buf);
+		UG_PutString(0, 16, buf);
 		v=kchal_get_bat_mv();
 		sprintf(buf, "VBATMV:%d", v);
-		UG_PutString(0, 32, buf);
+		UG_PutString(0, 24, buf);
 		sprintf(buf, "ADCCAL:%d", battFullAdcVal);
-		UG_PutString(0, 40, buf);
+		UG_PutString(0, 32, buf);
+		UG_SetForecolor(C_YELLOW);
+		UG_PutString(0, 40, "Gitrev/date");
+		UG_SetForecolor(C_WHITE);
+		UG_PutString(0, 48, GITREV);
+		UG_PutString(0, 56, COMPILEDATE);
 		kcugui_flush();
 		vTaskDelay(100/portTICK_RATE_MS);
 		if (k&KC_BTN_SELECT) {
