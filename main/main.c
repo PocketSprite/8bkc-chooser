@@ -262,6 +262,7 @@ int app_main(void)
 			.ssid = "pkspr",
 			.authmode=WIFI_AUTH_OPEN,
 			.max_connection = 2,
+			.channel=5,
 		}
 	};
 	ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_AP, &ap_config) );
