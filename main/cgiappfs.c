@@ -186,9 +186,31 @@ int ICACHE_FLASH_ATTR cgiUploadFile(HttpdConnData *connData) {
 	return HTTPD_CGI_MORE;
 }
 
+static void json_esc(char *out, const char *in, int bufsz) {
+	int j=0;
+	for (int i=0; in[i]!=0; i++) {
+		if (j>=bufsz-3) break;
+		int esc=-1;
+		if (in[i]==8) esc='b';
+		if (in[i]==12) esc='f';
+		if (in[i]==10) esc='n';
+		if (in[i]==13) esc='r';
+		if (in[i]==9) esc='t';
+		if (in[i]==34) esc='"';
+		if (in[i]==92) esc='\\';
+		if (esc==-1) {
+			out[j++]=in[i];
+		} else {
+			out[j++]='\\';
+			out[j++]=esc;
+		}
+	}
+	out[j++]=0;
+}
+
 int ICACHE_FLASH_ATTR cgiFileIdx(HttpdConnData *connData) {
 	int *idx=(int*)&connData->cgiData;
-	char buff[128];
+	char buff[256];
 	int fd;
 
 	printf("cgiFileIdx: run %d\n", *idx-0x100);
@@ -209,8 +231,11 @@ int ICACHE_FLASH_ATTR cgiFileIdx(HttpdConnData *connData) {
 		const char *name=NULL;
 		int size;
 		appfsEntryInfo(fd, &name, &size);
+		//no need to check name for NULL; we checked if fd is valid before.
+		char name_esc[128];
+		json_esc(name_esc, name, 128);
 		sprintf(buff, "%s{\"index\": %d, \"name\": \"%s\", \"size\": %d, \"addr\": \"0x%X\" }\n", *idx?",":"", 
-			fd, name, size, 0);
+			fd, name_esc, size, 0);
 		printf(" - %s\n", buff);
 		httpdSend(connData, buff, -1);
 		*idx=fd+0x100;
