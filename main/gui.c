@@ -246,6 +246,7 @@ static void show_options() {
 static int fccallback(int button, char **glob, char **desc, void *usrptr) {
 	if (button & KC_BTN_POWER) kchal_power_down();
 	if (button & KC_BTN_START) show_options();
+	if (button & KC_BTN_SELECT) debug_screen();
 	return 0;
 }
 
@@ -258,7 +259,7 @@ void guiMenu() {
 	//Wait till all buttons are released, and then until one button is pressed to go into the menu.
 	while (kchal_get_keys()) vTaskDelay(100/portTICK_RATE_MS);
 	while (!kchal_get_keys()) vTaskDelay(100/portTICK_RATE_MS);
-	int fd=kcugui_filechooser_filter(app_select_filter_fn, "*.app,*.bin", "CHOOSE APP", fccallback, NULL);
+	int fd=kcugui_filechooser_filter(app_select_filter_fn, "*.app,*.bin", "CHOOSE APP", fccallback, NULL, KCUGUI_FILE_FLAGS_NOEXT);
 	while(kchal_get_keys()); //wait till btn released
 	kchal_set_new_app(fd);
 	kchal_boot_into_new_app();

@@ -263,6 +263,7 @@ int app_main(void)
 			.authmode=WIFI_AUTH_OPEN,
 			.max_connection = 2,
 			.channel=5,
+			.beacon_interval=200
 		}
 	};
 	ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_AP, &ap_config) );
