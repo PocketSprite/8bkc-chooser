@@ -55,6 +55,7 @@ some pictures of cats.
 #include "gui.h"
 #include "ugui.h"
 #include "esp_log.h"
+#include "fnmatch.h"
 
 esp_err_t event_handler(void *ctx, system_event_t *event)
 {
@@ -229,6 +230,22 @@ void handleKeyLock() {
 	kchal_power_down();
 }
 
+//Files named __[something].tmp are assumed to be temp files that are renamed successfully once writing has succeeded. Seemingly,
+//they were never renamed and remain as filesystem detritus. Remove them here.
+static void delete_temp_files() {
+	appfs_handle_t h=APPFS_INVALID_FD;
+	while(1) {
+		h=appfsNextEntry(h);
+		if (h==APPFS_INVALID_FD) break;
+		const char *name;
+		appfsEntryInfo(h, &name, NULL);
+		if (fnmatch("__*.tmp", name, 0)==0) {
+			printf("Removing temp file %s\n", name);
+			appfsDeleteFile(name);
+		}
+	}
+}
+
 //Main routine. Initialize stdout, the I/O, filesystem and the webserver and we're done.
 int app_main(void)
 {
@@ -244,10 +261,7 @@ int app_main(void)
 //	esp_log_level_set("appfs", ESP_LOG_DEBUG);
 
 	appfsDump();
-	if (appfsExists(UPLOAD_TEMP_NAME)) {
-		printf("Deleting aborted upload file.\n");
-		appfsDeleteFile(UPLOAD_TEMP_NAME);
-	}
+	delete_temp_files();
 
 	printf("Starting webserver...\n");
 	nvs_flash_init();
