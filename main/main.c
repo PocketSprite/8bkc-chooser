@@ -79,8 +79,8 @@ HttpdBuiltInUrl builtInUrls[]={
 	{"/upload.cgi", cgiUploadFile, NULL},
 	{"/fileidx.cgi", cgiFileIdx, NULL},
 	{"/delete.cgi", cgiDelete, NULL},
-	{"/poweroff.cgi", cgiPowerOff, NULL},
-	{"/reset.cgi", cgiReset, NULL},
+//	{"/poweroff.cgi", cgiPowerOff, NULL},
+//	{"/reset.cgi", cgiReset, NULL},
 	{"*", cgiEspFsHook, NULL}, //Catch-all cgi function for the filesystem
 	{NULL, NULL, NULL}
 };

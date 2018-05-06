@@ -25,6 +25,7 @@ static void cbReset(TimerHandle_t xTimer) {
 	system_restart();
 }
 
+/*
 
 int cgiPowerOff(HttpdConnData *connData) {
 	TimerHandle_t t=xTimerCreate("t", pdMS_TO_TICKS(500), pdFALSE, NULL, cbPowerOff);
@@ -46,3 +47,5 @@ int cgiReset(HttpdConnData *connData) {
 	httpdSend(connData, "OK", -1);
 	return HTTPD_CGI_DONE;
 }
+
+*/
