@@ -74,7 +74,7 @@ should be placed above the URLs they protect.
 */
 HttpdBuiltInUrl builtInUrls[]={
 	{"*", cgiRedirectApClientToHostname, "esp8266.nonet"},
-	{"/", cgiRedirect, "/index.html"},
+	{"/", cgiRedirect, "/index.min.html"},
 	{"/reboot.cgi", cgiRebootFirmware, NULL},
 	{"/upload.cgi", cgiUploadFile, NULL},
 	{"/fileidx.cgi", cgiFileIdx, NULL},
