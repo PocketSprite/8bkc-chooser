@@ -22,6 +22,8 @@ function doUpgrade() {
 	xhr.open("POST", "upload.cgi?name=" + name);
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4 && ((xhr.status >= 200 && xhr.status < 300) || xhr.status == 400)) {
+			//No more fluid progress bar
+			$("#progressbarinner").style.transition="0s";
 			setProgress(1);
 			if (xhr.responseText != "") {
 				alert("Error: " + xhr.responseText);
@@ -38,6 +40,8 @@ function doUpgrade() {
 			$ub.value = "Uploading…";
 		}
 	}
+	//Fluid progress bar
+	$("#progressbarinner").style.transition=".2s";
 	//Upload the file
 	xhr.send(f);
 	return false;
