@@ -1,99 +1,46 @@
 <html>
-<head><title>Pocket Sprite File Manager</title>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<link rel="stylesheet" type="text/css" href="style.css">
-<script type="text/javascript" src="140medley.min.js"></script>
-<script type="text/javascript">
-var xhr=j();
 
-//Sets the progress bar to a specific level. Amt is between 0 and 1.
-function setProgress(amt) {
-	$("#progressbarinner").style.width=String(amt*$("#progressbar").clientWidth)+"px";
-}
-
-//Called when the submit button is called.
-function doUpgrade() {
-	//Grab the file, see if it's a real file.
-	var f=$("#file").files[0];
-	if (typeof f=='undefined') {
-		$("#remark").innerHTML="Can't read file!";
-		return
-	}
-	var name=$("#file").value
-	name=name.replace(/^.*[\\\/]/, '')
-	xhr.open("POST", "upload.cgi?name="+name);
-	xhr.onreadystatechange=function() {
-		if (xhr.readyState==4 && ((xhr.status>=200 && xhr.status<300) || xhr.status==400)) {
-			setProgress(1);
-			if (xhr.responseText!="") {
-				alert("Error: "+xhr.responseText);
-			} else {
-				triggerReload();
-			}
-		}
-	}
-	//If the webbrowser enables it, make progress bar show progress.
-	if (typeof xhr.upload.onprogress != 'undefined') {
-		xhr.upload.onprogress=function(e) {
-			setProgress(e.loaded / e.total);
-		}
-	}
-	//Upload the file
-	xhr.send(f);
-	return false;
-}
-
-function triggerReload() {
-	xhr.open("GET", "fileidx.cgi");
-	xhr.onreadystatechange=function() {
-		if (xhr.readyState==4 && xhr.status>=200 && xhr.status<300) {
-			var obj=JSON.parse(xhr.responseText);
-			var table=$("#fileidx");
-			while (table.rows.length!=1) table.deleteRow(1);
-			for (var x=0; x<obj.files.length; x++) {
-				var row=table.insertRow(-1);
-				var cName=row.insertCell(-1);
-				var cSize=row.insertCell(-1);
-				var cDelete=row.insertCell(-1);
-				cName.appendChild(document.createTextNode(obj.files[x].name));
-				if (obj.files[x].size>=(1024*1024)) {
-					cSize.appendChild(document.createTextNode(parseInt(obj.files[x].size/(1024*1024))+" MiB"));
-				} else {
-					cSize.appendChild(document.createTextNode(parseInt(obj.files[x].size/(1024))+" KiB"));
-				}
-				var a = document. createElement('a'); 
-				a.setAttribute('href', 'delete.cgi?idx='+obj.files[x].index);
-				a.appendChild(document.createTextNode('✖'));
-				cDelete.appendChild(a);
-			}
-			setProgress(0);
-		}
-	}
-	xhr.send();
-}
-
-window.onload=function(e) {
-	triggerReload();
-}
-
-</script>
+<head>
+    <title>Pocket Sprite File Manager</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css" href="style.min.css">
+    <script type="text/javascript" src="140medley.min.js"></script>
+    <script type="text/javascript" src="main.min.js"></script>
 </head>
-<body>
-<div id="h"><img src="l.svg" class="svg"></div>
-<div id="main">
-<h1>Available files:</h1>
-<table id="fileidx" class="c t">
-<thead><tr><th>Name</th><th>Size</th><th>Delete</th></tr></thead>
-<tbody>
-<tr><td>Loading....</td><td>0K</td><td>&nbsp;</td></tr>
-</tbody>
-</table>
-<h1>Upload file</h1>
-<input type="file" id="file" class="if">
-<label for="file" class="action-button shadow animate blue"><svg width="20" height="17" viewBox="0 0 20 17"><path d="M10 0l-5.2 4.9h3.3v5.1h3.8v-5.1h3.3l-5.2-4.9zm9.3 11.5l-3.2-2.1h-2l3.4 2.6h-3.5c-.1 0-.2.1-.2.1l-.8 2.3h-6l-.8-2.2c-.1-.1-.1-.2-.2-.2h-3.6l3.4-2.6h-2l-3.2 2.1c-.4.3-.7 1-.6 1.5l.6 3.1c.1.5.7.9 1.2.9h16.3c.6 0 1.1-.4 1.3-.9l.6-3.1c.1-.5-.2-1.2-.7-1.5z" fill="white" /></path></svg>&nbsp;&nbsp;<span>Choose a file&hellip;</span></label>
-<input type="submit" class="action-button shadow animate red" value="Upload!" onclick="doUpgrade()" />
-<div id="progressbar" class="c"><div id="progressbarinner" class="c"></div></div>
-</div>
-<div class="cr"><a href="credits.html">PocketSprite Credits</a></div>
-</body>
 
+<body>
+    <div id="h"><img src="l.svg" class="svg"></div>
+    <div id="main">
+        <h1>Available files:</h1>
+        <table id="fileidx" class="c t">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Size</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Loading…</td>
+                    <td>0K</td>
+                    <td>&nbsp;</td>
+                </tr>
+            </tbody>
+        </table>
+        <h1>Upload file</h1>
+        <div class="form">
+            <input type="file" id="file" class="if">
+            <label for="file" class="action-button shadow blue">
+                <svg width="20" height="17" viewBox="0 0 20 17">
+                    <path d="M10 0l-5.2 4.9h3.3v5.1h3.8v-5.1h3.3l-5.2-4.9zm9.3 11.5l-3.2-2.1h-2l3.4 2.6h-3.5c-.1 0-.2.1-.2.1l-.8 2.3h-6l-.8-2.2c-.1-.1-.1-.2-.2-.2h-3.6l3.4-2.6h-2l-3.2 2.1c-.4.3-.7 1-.6 1.5l.6 3.1c.1.5.7.9 1.2.9h16.3c.6 0 1.1-.4 1.3-.9l.6-3.1c.1-.5-.2-1.2-.7-1.5z" fill="white" /></path>
+                </svg><span>Choose a file…</span></label>
+            <input type="submit" class="action-button shadow red" value="" id="ub" onclick="doUpgrade()" />
+        </div>
+        <div id="remark"></div>
+        <div id="progressbar" class="c">
+            <div id="progressbarinner" class="c"></div>
+        </div>
+    </div>
+    <div class="cr"><a href="credits.html">PocketSprite Credits</a></div>
+</body>

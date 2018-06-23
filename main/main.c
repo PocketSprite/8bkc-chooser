@@ -1,14 +1,14 @@
 /*
  * ----------------------------------------------------------------------------
  * "THE BEER-WARE LICENSE" (Revision 42):
- * Jeroen Domburg <jeroen@spritesmods.com> wrote this file. As long as you retain 
- * this notice you can do whatever you want with this stuff. If we meet some day, 
- * and you think this stuff is worth it, you can buy me a beer in return. 
+ * Jeroen Domburg <jeroen@spritesmods.com> wrote this file. As long as you retain
+ * this notice you can do whatever you want with this stuff. If we meet some day,
+ * and you think this stuff is worth it, you can buy me a beer in return.
  * ----------------------------------------------------------------------------
  */
 
 /*
-This is example code for the esphttpd library. It's a small-ish demo showing off 
+This is example code for the esphttpd library. It's a small-ish demo showing off
 the server, including WiFi connection management capabilities, some IO and
 some pictures of cats.
 */
@@ -74,7 +74,8 @@ should be placed above the URLs they protect.
 */
 HttpdBuiltInUrl builtInUrls[]={
 	{"*", cgiRedirectApClientToHostname, "esp8266.nonet"},
-	{"/", cgiRedirect, "/index.html"},
+	{"/", cgiRedirect, "/index.min.html"},
+	{"/index.html", cgiRedirect, "/index.min.html"},
 	{"/reboot.cgi", cgiRebootFirmware, NULL},
 	{"/upload.cgi", cgiUploadFile, NULL},
 	{"/fileidx.cgi", cgiFileIdx, NULL},
@@ -145,7 +146,7 @@ void handleCharging() {
 void do_recovery_mode() {
 	//Start + select are pressed while turning on or resetting. We haven't touched appfs or nvram
 	//yet; give user option to nuke either or both.
-	
+
 	kcugui_menuitem_t menu[]={
 		{"   Exit    ",0,NULL},
 		{"Erase Flash",0,NULL},
@@ -153,7 +154,7 @@ void do_recovery_mode() {
 		{"Factory Rst",0,NULL},
 		{"",KCUGUI_MENUITEM_LAST,0,NULL}
 	};
-	
+
 	guiInit();
 	int i=kcugui_menu(menu, "RECOVERY", NULL, NULL);
 	printf("Recovery menu choice: %d\n", i);
