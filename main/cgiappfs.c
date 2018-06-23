@@ -76,12 +76,11 @@ int ICACHE_FLASH_ATTR cgiUploadFile(HttpdConnData *connData) {
 	if (state==NULL) {
 		//First call. Allocate and initialize state variable.
 		httpd_printf("Firmware upload cgi start.\n");
-		state=malloc(sizeof(UploadState));
+		state=calloc(sizeof(UploadState), 1);
 		if (state==NULL) {
 			httpd_printf("Can't allocate firmware upload struct!\n");
 			return HTTPD_CGI_DONE;
 		}
-		memset(state, 0, sizeof(UploadState));
 		state->state=FLST_START;
 		connData->cgiData=state;
 		state->err="Premature end";
@@ -186,6 +185,91 @@ int ICACHE_FLASH_ATTR cgiUploadFile(HttpdConnData *connData) {
 	return HTTPD_CGI_MORE;
 }
 
+typedef struct {
+	appfs_handle_t fd;
+	int size;
+	int pos;
+} DownloadState;
+
+
+#define DOWNLOAD_CHUNK_SIZE 1024
+int ICACHE_FLASH_ATTR cgiDownloadFile(HttpdConnData *connData) {
+	DownloadState *state=(DownloadState *)connData->cgiData;
+	esp_err_t err;
+
+	if (connData->conn==NULL) {
+		//Connection aborted. Clean up.
+		if (state!=NULL) free(state);
+		return HTTPD_CGI_DONE;
+	}
+
+	if (state==NULL) {
+		//First call. Open file, error out if impossible.
+		httpd_printf("Firmware download cgi start.\n");
+		state=calloc(sizeof(DownloadState), 1);
+		if (state==NULL) {
+			httpd_printf("Can't allocate firmware download struct!\n");
+			return HTTPD_CGI_DONE;
+		}
+		connData->cgiData=state;
+
+		char sidx[16];
+		int idx=-1;
+		int len=httpdFindArg(connData->getArgs, "idx", sidx, 16);
+		const char *name=NULL;
+		if (len>0) {
+			idx=atoi(sidx);
+			if (appfsFdValid(idx)) {
+				appfsEntryInfo(idx, &name, &state->size);
+			}
+		}
+
+		if (!name) {
+			//error retrieving idx data
+			httpdStartResponse(connData, 404);
+			httpdHeader(connData, "Content-Type", "text/plain");
+			httpdEndHeaders(connData);
+			httpdSend(connData, "Invalid idx var\n", -1);
+			return HTTPD_CGI_DONE;
+		}
+
+		//No error: start file
+		state->fd=idx;
+		httpdStartResponse(connData, 200);
+		httpdHeader(connData, "Content-Type", "application/octet-stream");
+		char buff[256];
+		strcpy(buff, "attachment; filename=\"");
+		//Replace quotes with underscores. Lazy I know.
+		char *p=&buff[strlen(buff)];
+		for (int i=0; i<strlen(name); i++) {
+			if (name[i]=='\'' || name[i]=='"' || name[i]&0x80) {
+				*p++='_';
+			} else {
+				*p++=name[i];
+			}
+		}
+		strcpy(p, "\"");
+		httpdHeader(connData, "Content-Disposition", buff);
+		sprintf(buff, "%d", state->size);
+		httpdHeader(connData, "Content-Length", buff);
+		httpdEndHeaders(connData);
+	}
+
+	char data[DOWNLOAD_CHUNK_SIZE];
+	int len=state->size-state->pos;
+	if (len>DOWNLOAD_CHUNK_SIZE) len=DOWNLOAD_CHUNK_SIZE;
+	printf("Download: at %d, pushing %d bytes.\n", state->pos, len);
+	appfsRead(state->fd, state->pos, data, len);
+	httpdSend(connData, data, len);
+	state->pos+=len;
+	if (state->pos==state->size) {
+		free(state);
+		return HTTPD_CGI_DONE;
+	} else {
+		return HTTPD_CGI_MORE;
+	}
+}
+
 static void json_esc(char *out, const char *in, int bufsz) {
 	int j=0;
 	for (int i=0; in[i]!=0; i++) {
@@ -281,5 +365,5 @@ int ICACHE_FLASH_ATTR cgiDelete(HttpdConnData *connData) {
 		httpdEndHeaders(connData);
 		httpdSend(connData, "Invalid idx var\n", -1);
 	}
-		return HTTPD_CGI_DONE;
+	return HTTPD_CGI_DONE;
 }

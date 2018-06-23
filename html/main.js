@@ -56,7 +56,10 @@ function triggerReload() {
 				var cName = row.insertCell(-1);
 				var cSize = row.insertCell(-1);
 				var cDelete = row.insertCell(-1);
-				cName.appendChild(document.createTextNode(obj.files[x].name));
+				var na = document.createElement('a');
+				na.setAttribute('href', 'download.cgi?idx=' + obj.files[x].index);
+				na.appendChild(document.createTextNode(obj.files[x].name));
+				cName.appendChild(na);
 				if (obj.files[x].size >= (1024 * 1024)) {
 					cSize.appendChild(document.createTextNode(parseInt(obj.files[x].size / (1024 * 1024)) + " MiB"));
 				} else {
