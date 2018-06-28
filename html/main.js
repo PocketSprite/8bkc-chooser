@@ -64,21 +64,27 @@ function triggerReload() {
 				na.setAttribute('href', 'download.cgi?idx=' + obj.files[x].index);
 				na.appendChild(document.createTextNode(obj.files[x].name));
 				cName.appendChild(na);
-				if (obj.files[x].size >= (1024 * 1024)) {
-					cSize.appendChild(document.createTextNode(parseInt(obj.files[x].size / (1024 * 1024)) + " MiB"));
-				} else {
-					cSize.appendChild(document.createTextNode(parseInt(obj.files[x].size / (1024)) + " KiB"));
-				}
+				cSize.appendChild(document.createTextNode(formatBytes(obj.files[x].size)));
 				var a = document.createElement('a');
 				a.setAttribute('href', 'delete.cgi?idx=' + obj.files[x].index);
 				a.appendChild(document.createTextNode('✖'));
 				cDelete.appendChild(a);
 			}
+			$("#free").innerHTML = "<h1>Free Space: " + formatBytes(obj.free) + "</h1>";
 			setProgress(0);
 		}
 	}
 	xhr.send();
 }
+
+function formatBytes(size){
+	if (size >= (1024 * 1024)) {
+		return parseInt(size / (1024 * 1024)) + " MiB";
+	} else {
+		return parseInt(size / (1024)) + " KiB";
+	}
+}
+
 window.onload = function() {
 	$ub = $("#ub");
 	triggerReload();
