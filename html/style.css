@@ -38,6 +38,10 @@ h1 {
 	color: #ed555d;
 }
 
+.free {
+	font-size: 1rem;
+}
+
 #main {
 	background-color: #1a1f28;
 	width: 50%;

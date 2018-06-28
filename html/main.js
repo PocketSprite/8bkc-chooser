@@ -70,7 +70,7 @@ function triggerReload() {
 				a.appendChild(document.createTextNode('✖'));
 				cDelete.appendChild(a);
 			}
-			$("#free").innerHTML = "<h1>Free Space: " + formatBytes(obj.free) + "</h1>";
+			$("#free").firstChild.data=formatBytes(obj.free);
 			setProgress(0);
 		}
 	}
