@@ -174,6 +174,7 @@ void option_set_text(opt_data_t *t) {
 
 int option_menu_cb(int button, char **desc, kcugui_menuitem_t **menu, int item_selected, void *userptr) {
 	opt_data_t *od=(*menu)[item_selected].user;
+	if (button==KC_BTN_B) return KCUGUI_CB_CANCEL;
 	if (button!=KC_BTN_LEFT && button!=KC_BTN_RIGHT) return 0;
 	if (od->opt_id==OPT_KEYLOCK || od->opt_id==OPT_WIFI) {
 		*od->opt_val=!(*od->opt_val);
@@ -191,7 +192,7 @@ int option_menu_cb(int button, char **desc, kcugui_menuitem_t **menu, int item_s
 		kchal_set_brightness(n);
 	}
 	option_set_text(od);
-	return 0;
+	return KCUGUI_CB_REFRESH;
 }
 
 
@@ -220,8 +221,8 @@ static void show_options() {
 	keylock&=255; wifi_en&=255; //uint8 -> int
 	int wifi_old=wifi_en;
 	for(int i=0; i<4; i++) option_set_text(&odata[i]);
-	int ch=-1;
-	while(ch!=5) {
+	int ch=-2;
+	while(ch!=5 && ch!=-1) {
 		ch=kcugui_menu(menu, "OPTIONS", option_menu_cb, NULL);
 		if (ch==0) {
 			keylock=!keylock;
