@@ -264,7 +264,6 @@ int app_main(void)
 	appfsDump();
 	delete_temp_files();
 
-	printf("Starting webserver...\n");
 	nvs_flash_init();
 	tcpip_adapter_init();
 	ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
@@ -277,10 +276,15 @@ int app_main(void)
 			.ssid = "pkspr",
 			.authmode=WIFI_AUTH_OPEN,
 			.max_connection = 2,
-			.channel=5,
 			.beacon_interval=200
 		}
 	};
+	uint8_t channel=5;
+	nvs_handle nvsHandle=NULL;
+	if (nvs_open("8bkc", NVS_READWRITE, &nvsHandle)==ESP_OK) {
+		nvs_get_u8(nvsHandle, "channel", &channel);
+	}
+	ap_config.ap.channel=channel;
 	ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_AP, &ap_config) );
 	ESP_ERROR_CHECK( esp_wifi_start() );
 //	ESP_ERROR_CHECK( esp_wifi_connect() );
@@ -292,7 +296,7 @@ int app_main(void)
 
 	guiInit();
 
-	printf("\nReady\n");
+	printf("\nReady, AP on channel %d\n", (int)channel);
 
 	guiMenu();
 
