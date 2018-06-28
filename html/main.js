@@ -19,7 +19,7 @@ function doUpgrade() {
 	}
 	var name = $("#file").value
 	name = name.replace(/^.*[\\\/]/, '')
-	xhr.open("POST", "upload.cgi?name=" + name);
+	xhr.open("POST", "upload.cgi?name=" + encodeURIComponent(name));
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4 && ((xhr.status >= 200 && xhr.status < 300) || xhr.status == 400)) {
 			//No more fluid progress bar
