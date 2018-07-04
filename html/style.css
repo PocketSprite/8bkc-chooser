@@ -143,7 +143,6 @@ button:focus {
 	height: 2rem;
 	width: 100%;
 	overflow: hidden;
-	display: none;
 }
 
 #progressbarinner {
