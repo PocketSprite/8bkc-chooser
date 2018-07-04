@@ -171,7 +171,23 @@ button:focus {
 	flex-grow: 0;
 }
 
+.sort {
+	padding: .25em;
+	overflow: hidden;
+	border-radius: 2px;
+	float: right;
+	margin-left: 2px;
+	background: #ccc;
+}
+.sort:hover {
+	background: #fff;
+}
 
+.sort img {
+	max-width: 1em;
+	height: auto;
+
+}
 
 #remark {
 	display: none;
