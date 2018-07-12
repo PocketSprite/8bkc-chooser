@@ -291,6 +291,7 @@ int app_main(void)
 	httpdInit(builtInUrls, 80);
 
 	guiInit();
+	guiSplash();
 
 	printf("\nReady\n");
 
