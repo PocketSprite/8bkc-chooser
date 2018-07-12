@@ -3,19 +3,20 @@
 <head>
 	<title>Pocket Sprite File Manager</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<link rel="stylesheet" type="text/css" href="style.css">
 	<script type="text/javascript" src="140medley.min.js"></script>
 	<script type="text/javascript" src="main.js"></script>
 </head>
 
 <body>
-	<div id="h"><img src="l.svg" class="svg"></div>
+	<img src="l.svg" class="svg">
 	<div id="main">
 		<noscript><h1>Please enable javascript!</h1></noscript>
 		<table width=100%>
 			<tr>
 				<td><h1>Available files:</h1></td>
-				<td id="free" style="text-align: right"></td>
+				<td style="text-align: right"><h1 class="free">Free space: <span id="free">0 MiB</span></h1></td>
 			</tr>
 		</table>
 		<table id="fileidx" class="c t">
