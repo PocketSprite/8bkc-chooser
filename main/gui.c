@@ -38,6 +38,24 @@ void drawIcon(int px, int py, int o) {
 	}
 }
 
+void drawBatterySOC() {
+	// draw outer battery frame
+	UG_DrawFrame(KC_SCREEN_W-17, 0, KC_SCREEN_W-3, 6, C_WHITE);
+	UG_DrawFrame(KC_SCREEN_W-2, 2, KC_SCREEN_W-1, 4, C_WHITE);
+	
+	// collect battery info
+	int b = kchal_get_bat_pct();
+	
+	// select appropriate filler color
+	UG_COLOR batColor;
+	if (b < 20) batColor = C_RED;
+	else if (b < 50) batColor = C_GOLD;
+	else batColor = C_LIME;
+	
+	// fill in battery, relative to battery SOC
+	UG_FillFrame(KC_SCREEN_W-16, 1, KC_SCREEN_W-4-(((100-b)*12)/100), 5, batColor);
+}
+
 
 void guiCharging(int almostFull) {
 	kcugui_cls();
@@ -63,6 +81,10 @@ void guiBatEmpty() {
 
 void guiInit() {
 	kcugui_init();
+	kcugui_flush();
+}
+
+void guiSplash() {
 	uint8_t wifi_en=1;
 	nvs_handle nvsHandle=NULL;
 	esp_err_t r=nvs_open("8bkc", NVS_READONLY, &nvsHandle);
@@ -71,6 +93,8 @@ void guiInit() {
 	}
 	nvs_close(nvsHandle);
 
+	drawBatterySOC();
+	
 	UG_FontSelect(&FONT_6X8);
 	if (wifi_en) {
 		UG_SetForecolor(C_WHITE);
