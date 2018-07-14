@@ -40,8 +40,8 @@ void drawIcon(int px, int py, int o) {
 
 void drawBatterySOC() {
 	// draw outer battery frame
-	UG_DrawFrame(KC_SCREEN_W-21, 0, KC_SCREEN_W-3, 7, C_WHITE);
-	UG_DrawFrame(KC_SCREEN_W-2, 2, KC_SCREEN_W-1, 5, C_WHITE);
+	UG_DrawFrame(KC_SCREEN_W-17, 0, KC_SCREEN_W-3, 6, C_WHITE);
+	UG_DrawFrame(KC_SCREEN_W-2, 2, KC_SCREEN_W-1, 4, C_WHITE);
 	
 	// collect battery info
 	int b = kchal_get_bat_pct();
@@ -53,7 +53,7 @@ void drawBatterySOC() {
 	else batColor = C_LIME;
 	
 	// fill in battery, relative to battery SOC
-	UG_FillFrame(KC_SCREEN_W-20, 1, KC_SCREEN_W-4-(((100-b)*16)/100), 6, batColor);
+	UG_FillFrame(KC_SCREEN_W-16, 1, KC_SCREEN_W-4-(((100-b)*12)/100), 5, batColor);
 }
 
 
@@ -93,28 +93,27 @@ void guiSplash() {
 	}
 	nvs_close(nvsHandle);
 
-	UG_FontSelect(&FONT_6X8);
-	
 	drawBatterySOC();
 	
+	UG_FontSelect(&FONT_6X8);
 	if (wifi_en) {
 		UG_SetForecolor(C_WHITE);
-		UG_PutString(0, 8, "WIFI AP");
+		UG_PutString(0, 0, "WIFI AP");
 		UG_SetForecolor(C_YELLOW);
-		UG_PutString(0, 16, " pkspr");
+		UG_PutString(0, 8, " pkspr");
 		UG_SetForecolor(C_WHITE);
-		UG_PutString(0, 24, "GO TO:");
+		UG_PutString(0, 16, "GO TO:");
 		UG_SetForecolor(C_YELLOW);
-		UG_PutString(0, 32, "HTTP://192.168.4.1/");
+		UG_PutString(0, 24, "HTTP://192.168.4.1/");
 	} else {
 		UG_SetForecolor(C_WHITE);
-		UG_PutString(0, 8,  "   NOTE:");
+		UG_PutString(0, 0, "   NOTE:");
 		UG_SetForecolor(C_YELLOW);
-		UG_PutString(0, 16, "WiFi is off");
-		UG_PutString(0, 24, "and can be ");
-		UG_PutString(0, 32, "enabled in ");
-		UG_PutString(0, 40, "the options");
-		UG_PutString(0, 48, "menu.      ");
+		UG_PutString(0, 8,  "WiFi is off");
+		UG_PutString(0, 16, "and can be ");
+		UG_PutString(0, 24, "enabled in ");
+		UG_PutString(0, 32, "the options");
+		UG_PutString(0, 40, "menu.      ");
 	}
 	UG_SetForecolor(C_RED);
 	UG_PutString(30, 56, "MENU");
