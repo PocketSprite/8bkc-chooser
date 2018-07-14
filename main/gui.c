@@ -38,6 +38,24 @@ void drawIcon(int px, int py, int o) {
 	}
 }
 
+void drawBatterySOC() {
+	// draw outer battery frame
+	UG_DrawFrame(KC_SCREEN_W-21, 0, KC_SCREEN_W-3, 7, C_WHITE);
+	UG_DrawFrame(KC_SCREEN_W-2, 2, KC_SCREEN_W-1, 5, C_WHITE);
+	
+	// collect battery info
+	int b = kchal_get_bat_pct();
+	
+	// select appropriate filler color
+	UG_COLOR batColor;
+	if (b < 20) batColor = C_RED;
+	else if (b < 50) batColor = C_GOLD;
+	else batColor = C_LIME;
+	
+	// fill in battery, relative to battery SOC
+	UG_FillFrame(KC_SCREEN_W-20, 1, KC_SCREEN_W-4-(((100-b)*16)/100), 6, batColor);
+}
+
 
 void guiCharging(int almostFull) {
 	kcugui_cls();
@@ -77,19 +95,7 @@ void guiSplash() {
 
 	UG_FontSelect(&FONT_6X8);
 	
-	char buf[32];
-	int b = kchal_get_bat_pct();
-	//int b = 100;
-	sprintf(buf, "%i", b);
-
-	if (b < 20) UG_SetForecolor(C_RED);
-	else if (b < 50) UG_SetForecolor(C_GOLD);
-	else UG_SetForecolor(C_LAWN_GREEN);
-	
-	UG_PutString(KC_SCREEN_W-4-(7*strlen(buf)), 1, buf);
-
-	UG_DrawFrame(KC_SCREEN_W-27, 0, KC_SCREEN_W-3, 8, C_WHITE);
-	UG_DrawFrame(KC_SCREEN_W-2, 2, KC_SCREEN_W-1, 6, C_WHITE);
+	drawBatterySOC();
 	
 	if (wifi_en) {
 		UG_SetForecolor(C_WHITE);
@@ -102,7 +108,7 @@ void guiSplash() {
 		UG_PutString(0, 32, "HTTP://192.168.4.1/");
 	} else {
 		UG_SetForecolor(C_WHITE);
-		UG_PutString(0, 8,  "NOTE:      ");
+		UG_PutString(0, 8,  "   NOTE:");
 		UG_SetForecolor(C_YELLOW);
 		UG_PutString(0, 16, "WiFi is off");
 		UG_PutString(0, 24, "and can be ");
@@ -110,6 +116,8 @@ void guiSplash() {
 		UG_PutString(0, 40, "the options");
 		UG_PutString(0, 48, "menu.      ");
 	}
+	UG_SetForecolor(C_RED);
+	UG_PutString(30, 56, "MENU");
 	UG_SetBackcolor(C_BLACK);
 
 	kcugui_flush();
