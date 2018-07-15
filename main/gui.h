@@ -7,6 +7,7 @@ void guiFull();
 void guiBatEmpty();
 
 void guiInit();
+void guiSplash();
 
 void guiMenu();
 
