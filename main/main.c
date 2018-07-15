@@ -19,6 +19,7 @@ some pictures of cats.
 #include "cgiwifi.h"
 #include "cgiflash.h"
 #include "cgiappfs.h"
+#include "cgidev.h"
 #include "cgi.h"
 #include "auth.h"
 #include "espfs.h"
@@ -80,6 +81,8 @@ HttpdBuiltInUrl builtInUrls[]={
 	{"/download.cgi", cgiDownloadFile, NULL},
 	{"/fileidx.cgi", cgiFileIdx, NULL},
 	{"/delete.cgi", cgiDelete, NULL},
+	{"/getlog.cgi", cgiDownloadLog, NULL},
+	{"/getflash.cgi", cgiDownloadFlash, NULL},
 //	{"/poweroff.cgi", cgiPowerOff, NULL},
 //	{"/reset.cgi", cgiReset, NULL},
 	{"*", cgiEspFsHook, NULL}, //Catch-all cgi function for the filesystem
@@ -250,9 +253,9 @@ static void delete_temp_files() {
 //Main routine. Initialize stdout, the I/O, filesystem and the webserver and we're done.
 int app_main(void)
 {
-	kchal_init_hw();
+	kchal_init_hw(KCHAL_INIT_NO_STDOUT_HDL);
 	if (kchal_get_keys() == (KC_BTN_START|KC_BTN_SELECT)) do_recovery_mode();
-	kchal_init_sdk();
+	kchal_init_sdk(KCHAL_INIT_NO_STDOUT_HDL);
 	uint32_t r=kchal_rtc_reg_bootup_val();
 	printf("Rtc store reg: %x\n", r);
 	if (kchal_get_chg_status()!=KC_CHG_NOCHARGER && ((r&0x100)==0)) handleCharging();
