@@ -6,6 +6,7 @@
 #include "ugui.h"
 #include "8bkc-hal.h"
 #include "8bkc-ugui.h"
+#include "8bkcgui-widgets.h"
 #include "appfs.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -94,6 +95,8 @@ void guiInit() {
 	UG_SetForecolor(C_RED);
 	UG_PutString(30, 56, "MENU");
 	UG_SetBackcolor(C_BLACK);
+
+	kcugui_drawBatteryIcon();
 
 	kcugui_flush();
 }
