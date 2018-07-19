@@ -49,6 +49,46 @@ void guiCharging(int almostFull) {
 	kcugui_flush();
 }
 
+void drawBatteryIcon() {
+	// draw outer battery frame and fill it with black
+	UG_DrawFrame(KC_SCREEN_W-16, 0, KC_SCREEN_W-3, 6, C_WHITE);
+	UG_FillFrame(KC_SCREEN_W-15, 1, KC_SCREEN_W-4, 5, C_BLACK);
+	// draw the positive contact
+	UG_DrawFrame(KC_SCREEN_W-2, 2, KC_SCREEN_W-1, 4, C_WHITE);
+
+	// collect battery info and select appropriate filler color
+	int b = kchal_get_bat_pct();
+	UG_COLOR batColor;
+	if (b < 20) batColor = C_RED;
+	else if (b < 50) batColor = C_GOLD;
+	else batColor = C_LIME;
+
+	// fill in battery, relative to battery SOC
+	UG_FillFrame(KC_SCREEN_W-15, 1, KC_SCREEN_W-4-(((100-b)*12)/100), 5, batColor);
+
+	// add lightning bolt icon if applicable
+	if (kchal_get_chg_status() > 0) {
+		const static uint8_t chargingIcon[]={
+			0,0,0,1,1,1,
+			0,0,1,2,2,1,
+			0,1,2,2,1,0,
+			1,2,2,1,0,0,
+			0,1,2,2,1,0,
+			0,1,2,1,0,0,
+			1,2,1,0,0,0,
+			1,1,0,0,0,0
+		};
+		const uint8_t *p=chargingIcon;
+		for (int y=0; y<8; y++) {
+			for (int x=0; x<6; x++) {
+				if (*p == 1) UG_DrawPixel(x+(KC_SCREEN_W-11), y, 0x0000);
+				else if (*p == 2) UG_DrawPixel(x+(KC_SCREEN_W-11), y, 0xFEA0);
+				p++;
+			}
+		}
+	}
+}
+
 void guiFull() {
 	kcugui_cls();
 	drawIcon(20, 26, GFX_O_FULL);
@@ -98,6 +138,8 @@ void guiSplash() {
 	UG_SetForecolor(C_RED);
 	UG_PutString(30, 56, "MENU");
 	UG_SetBackcolor(C_BLACK);
+
+	drawBatteryIcon();
 
 	kcugui_flush();
 }
@@ -278,7 +320,15 @@ int app_select_filter_fn(const char *name, void *filterarg) {
 void guiMenu() {
 	//Wait till all buttons are released, and then until one button is pressed to go into the menu.
 	while (kchal_get_keys()) vTaskDelay(100/portTICK_RATE_MS);
-	while (!kchal_get_keys()) vTaskDelay(100/portTICK_RATE_MS);
+	int oldChgStatus = kchal_get_chg_status();
+	while (!kchal_get_keys()) {
+		if (oldChgStatus != kchal_get_chg_status()) { // update the battery icon charge status changes
+			drawBatteryIcon();
+			oldChgStatus = kchal_get_chg_status();
+			kcugui_flush();
+		}
+		vTaskDelay(100/portTICK_RATE_MS);
+	}
 	int fd=kcugui_filechooser_filter(app_select_filter_fn, "*.app,*.bin", "CHOOSE APP", fccallback, NULL, KCUGUI_FILE_FLAGS_NOEXT);
 	while(kchal_get_keys()); //wait till btn released
 	kchal_set_new_app(fd);
