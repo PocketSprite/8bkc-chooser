@@ -123,7 +123,7 @@ button:focus {
 	border-bottom-color: #2980B9;
 	text-shadow: 0px -2px #2980B9;
 }
-.blue svg {
+.blue img {
 	max-height: 1em;
 	width: auto;
 	filter: drop-shadow(0px -2px 0px #2980B9);
@@ -177,7 +177,29 @@ button:focus {
 	flex-grow: 0;
 }
 
+.sort {
+	padding: .25em;
+	overflow: hidden;
+	border-radius: 2px;
+	float: right;
+	margin-left: 2px;
+	background: #ccc;
+}
+.sort:hover {
+	background: #fff;
+}
 
+.sort img {
+	max-width: 1em;
+	height: auto;
+
+}
+
+#remark {
+	display: none;
+	padding: 1em;
+	text-align: center;
+}
 
 @media (max-width: 800px) {
 	html {
