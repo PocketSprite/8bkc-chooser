@@ -158,6 +158,7 @@ static void debug_screen() {
 #define OPT_VOL 2
 #define OPT_BRIGHT 3
 #define OPT_CHANNEL 4
+#define OPT_TIMEOUT 5
 
 typedef struct {
 	int opt_id;
@@ -176,6 +177,8 @@ void option_set_text(opt_data_t *t) {
 		sprintf(t->opt_name, "Volume %d", kchal_get_volume());
 	} else if (t->opt_id==OPT_BRIGHT) {
 		sprintf(t->opt_name, "Bright %d", kchal_get_brightness());
+	} else if (t->opt_id==OPT_TIMEOUT) {
+		sprintf(t->opt_name, "Timeout %s", *t->opt_val?"ON":"OFF");
 	}
 }
 
@@ -183,7 +186,7 @@ int option_menu_cb(int button, char **desc, kcugui_menuitem_t **menu, int item_s
 	opt_data_t *od=(*menu)[item_selected].user;
 	if (button==KC_BTN_B) return KCUGUI_CB_CANCEL;
 	if (button!=KC_BTN_LEFT && button!=KC_BTN_RIGHT) return 0;
-	if (od->opt_id==OPT_KEYLOCK || od->opt_id==OPT_WIFI) {
+	if (od->opt_id==OPT_KEYLOCK || od->opt_id==OPT_WIFI || od->opt_id==OPT_TIMEOUT) {
 		*od->opt_val=!(*od->opt_val);
 	} else if (od->opt_id==OPT_VOL) {
 		int n=kchal_get_volume();
@@ -210,14 +213,15 @@ int option_menu_cb(int button, char **desc, kcugui_menuitem_t **menu, int item_s
 
 
 static void show_options() {
-	int keylock=false, wifi_en=true, channel=5;
-	char text[5][32];
+	int keylock=false, wifi_en=true, channel=5, timeout=false;
+	char text[6][32];
 	opt_data_t odata[]={
 		{OPT_KEYLOCK, text[0], &keylock},
 		{OPT_WIFI, text[1], &wifi_en},
 		{OPT_VOL, text[2], NULL},
 		{OPT_BRIGHT, text[3], NULL},
 		{OPT_CHANNEL, text[4], &channel},
+		{OPT_TIMEOUT, text[5], &timeout},
 	};
 	kcugui_menuitem_t menu[]={
 		{text[0],0,&odata[0]},
@@ -225,6 +229,7 @@ static void show_options() {
 		{text[4],0,&odata[4]},
 		{text[2],0,&odata[2]},
 		{text[3],0,&odata[3]},
+		{text[5],0,&odata[5]},
 		{"Debug info", 0, NULL},
 		{"Exit",0,NULL},
 		{"",KCUGUI_MENUITEM_LAST,0,NULL}
@@ -234,13 +239,14 @@ static void show_options() {
 	nvs_get_u8(nvsHandle, "kl", &keylock);
 	nvs_get_u8(nvsHandle, "wifi", &wifi_en);
 	nvs_get_u8(nvsHandle, "channel", &channel);
-	keylock&=255; wifi_en&=255; //uint8 -> int
+	nvs_get_u8(nvsHandle, "timeout", &timeout);
+	keylock&=255; wifi_en&=255; timeout&=255; //uint8 -> int
 	int wifi_old=wifi_en;
 	int channel_old=channel;
 	if (channel<1 || channel>13) channel=5;
-	for(int i=0; i<5; i++) option_set_text(&odata[i]);
+	for(int i=0; i<6; i++) option_set_text(&odata[i]);
 	int ch=-2;
-	while(ch!=6 && ch!=-1) {
+	while(ch!=7 && ch!=-1) {
 		ch=kcugui_menu(menu, "OPTIONS", option_menu_cb, NULL);
 		if (ch==0) {
 			keylock=!keylock;
@@ -251,12 +257,17 @@ static void show_options() {
 			option_set_text(&odata[1]);
 		}
 		if (ch==5) {
+			timeout=!timeout;
+			option_set_text(&odata[5]);
+		}
+		if (ch==6) {
 			debug_screen();
 		}
 	}
 	nvs_set_u8(nvsHandle, "kl", keylock);
 	nvs_set_u8(nvsHandle, "wifi", wifi_en);
 	nvs_set_u8(nvsHandle, "channel", channel);
+	nvs_set_u8(nvsHandle, "timeout", timeout);
 	if (wifi_old!=wifi_en || channel!=channel_old) {
 		//Reboot I guess
 		kchal_boot_into_new_app();
